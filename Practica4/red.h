@@ -1,22 +1,11 @@
 #ifndef RED_H
 #define RED_H
 
+#include "enrutador.h"
 #include <vector>
 #include <string>
 #include <utility>
-
-class Router {
-public:
-    int id;
-    int distancia;
-    bool visitado;
-    Router* previo;
-    std::vector<std::pair<Router*, int>> vecinos;
-
-    Router(int id);
-    void nuevoVecino(Router* vecino, int costo);
-    void reiniciar();
-};
+#include <iostream>
 
 class Red {
 private:
@@ -24,13 +13,35 @@ private:
     std::string rutaArchivo;
 
 public:
-    Red(int cantidad);
-    ~Red();
+    // ===========================
+    // Constructores y destructor
+    // ===========================
+    Red();                      // Constructor vacío
+    Red(int cantidad);           // Constructor con número de routers
+    ~Red();                      // Destructor
 
+    // ===========================
+    // Funciones principales
+    // ===========================
     void generarRedAleatoria();
     void mostrarRed() const;
-    void guardarEnArchivo() const;
+
+    void guardarEnArchivo(const std::string& nombreArchivo) const;
+    void cargarDesdeArchivo(const std::string& nombreArchivo);
+
     void calcularRutaMasCorta(int origen, int destino);
+
+    // ===========================
+    // Gestión de enrutadores
+    // ===========================
+    void agregarEnrutador();
+    void eliminarEnrutador(int id);
+
+    // ===========================
+    // Gestión de enlaces
+    // ===========================
+    void agregarEnlace();
+    void eliminarEnlace();
 };
 
-#endif
+#endif // RED_H
