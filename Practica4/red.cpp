@@ -14,13 +14,14 @@
 #include <cstdlib>      // rand(), srand()
 #include <ctime>        // time()
 #include <climits>      // INT_MAX
+
 using namespace std;
 
 // =======================================================
 //              Constructores y destructor
 // =======================================================
 
-Red::Red() {}  // Constructor vacío
+Red::Red() {}
 
 Red::Red(int cantidad) {
     for (int i = 1; i <= cantidad; ++i)
@@ -118,12 +119,13 @@ void Red::cargarDesdeArchivo(const string& nombreArchivo) {
         return;
     }
 
+    for (auto* r : enrutadores)
+        delete r;
     enrutadores.clear();
 
     string origen, destino;
     int costo;
 
-    // Crear routers a medida que se encuentran
     auto obtenerRouter = [&](int id) -> Router* {
         for (auto* r : enrutadores)
             if (r->id == id) return r;
@@ -133,7 +135,7 @@ void Red::cargarDesdeArchivo(const string& nombreArchivo) {
     };
 
     while (archivo >> origen >> destino >> costo) {
-        if (origen[0] == '#') { // Ignorar comentarios
+        if (origen[0] == '#') {
             archivo.ignore(numeric_limits<streamsize>::max(), '\n');
             continue;
         }
@@ -145,7 +147,7 @@ void Red::cargarDesdeArchivo(const string& nombreArchivo) {
         Router* r2 = obtenerRouter(id2);
 
         r1->nuevoVecino(r2, costo);
-        r2->nuevoVecino(r1, costo); // bidireccional
+        r2->nuevoVecino(r1, costo);
     }
 
     archivo.close();
@@ -156,18 +158,14 @@ void Red::cargarDesdeArchivo(const string& nombreArchivo) {
 //              Calcular ruta más corta (Dijkstra)
 // =======================================================
 void Red::calcularRutaMasCorta(int origen, int destino) {
-    if (enrutadores.empty()) {
-        cout << "⚠️ La red está vacía.\n";
-        return;
-    }
-
     if (origen <= 0 || destino <= 0 ||
         origen > (int)enrutadores.size() || destino > (int)enrutadores.size()) {
-        cout << "⚠️ IDs fuera de rango.\n";
+        cout << "❌ Uno de los enrutadores no existe.\n";
         return;
     }
 
-    for (auto& r : enrutadores)
+    // Reiniciar distancias y estados
+    for (auto* r : enrutadores)
         r->reiniciar();
 
     Router* fuente = enrutadores[origen - 1];
@@ -176,6 +174,7 @@ void Red::calcularRutaMasCorta(int origen, int destino) {
     priority_queue<pair<int, Router*>, vector<pair<int, Router*>>, greater<>> pq;
     pq.push({0, fuente});
 
+    // Algoritmo de Dijkstra
     while (!pq.empty()) {
         Router* actual = pq.top().second;
         pq.pop();
@@ -199,17 +198,18 @@ void Red::calcularRutaMasCorta(int origen, int destino) {
         return;
     }
 
+    // Reconstruir el camino
     vector<int> camino;
     for (Router* r = destinoPtr; r != nullptr; r = r->previo)
         camino.push_back(r->id);
     reverse(camino.begin(), camino.end());
 
-    cout << "\nRuta más corta entre R" << origen << " y R" << destino << ":\n";
+    cout << "\n🛰️  Ruta más corta entre R" << origen << " y R" << destino << ":\n";
     for (size_t i = 0; i < camino.size(); ++i) {
         cout << "R" << camino[i];
         if (i < camino.size() - 1) cout << " -> ";
     }
-    cout << "\nCosto total: " << destinoPtr->distancia << "\n";
+    cout << "\n💰 Costo total: " << destinoPtr->distancia << "\n";
 }
 
 // =======================================================
@@ -261,14 +261,8 @@ void Red::eliminarEnrutador(int id) {
     }
 
     Router* objetivo = enrutadores[id - 1];
-    for (Router* r : enrutadores) {
-        if (r != objetivo) {
-            r->vecinos.erase(
-                remove_if(r->vecinos.begin(), r->vecinos.end(),
-                          [objetivo](auto& p){ return p.first == objetivo; }),
-                r->vecinos.end());
-        }
-    }
+    for (Router* r : enrutadores)
+        r->eliminarVecino(objetivo);
 
     delete objetivo;
     enrutadores.erase(enrutadores.begin() + id - 1);
@@ -325,18 +319,96 @@ void Red::eliminarEnlace() {
         return;
     }
 
-    Router* rA = enrutadores[a - 1];
-    Router* rB = enrutadores[b - 1];
-
-    auto remover = [&](Router* origen, Router* destino) {
-        origen->vecinos.erase(
-            remove_if(origen->vecinos.begin(), origen->vecinos.end(),
-                      [destino](auto& p){ return p.first == destino; }),
-            origen->vecinos.end());
-    };
-
-    remover(rA, rB);
-    remover(rB, rA);
+    enrutadores[a - 1]->eliminarVecino(enrutadores[b - 1]);
+    enrutadores[b - 1]->eliminarVecino(enrutadores[a - 1]);
 
     cout << "✅ Enlace eliminado entre R" << a << " y R" << b << ".\n";
+}
+
+// =======================================================
+//              Mostrar tablas de enrutamiento
+// =======================================================
+void Red::mostrarTablasDeEnrutamiento() {
+    if (enrutadores.empty()) {
+        cout << "⚠️ No hay enrutadores en la red.\n";
+        return;
+    }
+
+    ofstream salida("tablas.txt");
+    if (!salida.is_open()) {
+        cout << "❌ No se pudo crear el archivo de salida.\n";
+        return;
+    }
+
+    cout << "\n========= TABLAS DE ENRUTAMIENTO =========\n";
+
+    for (auto* origen : enrutadores) {
+        // Reiniciar los datos antes de cada ejecución de Dijkstra
+        for (auto* r : enrutadores)
+            r->reiniciar();
+        origen->distancia = 0;
+
+        // Dijkstra
+        priority_queue<pair<int, Router*>, vector<pair<int, Router*>>, greater<>> pq;
+        pq.push({0, origen});
+
+        while (!pq.empty()) {
+            Router* actual = pq.top().second;
+            pq.pop();
+
+            if (actual->visitado) continue;
+            actual->visitado = true;
+
+            for (auto& [vecino, costo] : actual->vecinos) {
+                int nuevaDist = actual->distancia + costo;
+                if (nuevaDist < vecino->distancia) {
+                    vecino->distancia = nuevaDist;
+                    vecino->previo = actual;
+                    pq.push({nuevaDist, vecino});
+                }
+            }
+        }
+
+        // Mostrar en pantalla
+        cout << "\n--- Tabla de enrutamiento para R" << origen->id << " ---\n";
+        cout << setw(10) << "Destino" << setw(15) << "Siguiente salto" << setw(10) << "Costo\n";
+        cout << "---------------------------------------------\n";
+
+        salida << "Tabla de enrutamiento para R" << origen->id << ":\n";
+        salida << "Destino,SiguienteSalto,Costo\n";
+
+        for (auto* destino : enrutadores) {
+            // Caso especial: el propio router
+            if (destino == origen) {
+                cout << setw(10) << ("R" + to_string(destino->id))
+                << setw(15) << ("R" + to_string(destino->id))
+                << setw(10) << 0 << "\n";
+                salida << "R" << destino->id << ",R" << destino->id << ",0\n";
+                continue;
+            }
+
+            if (destino->distancia == INT_MAX) {
+                cout << setw(10) << ("R" + to_string(destino->id))
+                << setw(15) << "-" << setw(10) << "-" << "\n";
+                salida << "R" << destino->id << ",-, -\n";
+                continue;
+            }
+
+            // Obtener el siguiente salto
+            Router* salto = destino;
+            while (salto->previo && salto->previo != origen)
+                salto = salto->previo;
+
+            cout << setw(10) << ("R" + to_string(destino->id))
+                 << setw(15) << ("R" + to_string(salto->id))
+                 << setw(10) << destino->distancia << "\n";
+
+            salida << "R" << destino->id << ",R" << salto->id << "," << destino->distancia << "\n";
+        }
+
+        salida << "\n";
+    }
+
+    salida.close();
+    cout << "\n💾 Tablas de enrutamiento guardadas en 'tablas.txt'\n";
 }

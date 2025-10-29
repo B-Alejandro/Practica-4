@@ -19,7 +19,8 @@ void mostrarMenu() {
     cout << "5. Agregar enlace\n";
     cout << "6. Eliminar enlace\n";
     cout << "7. Guardar red en archivo\n";
-    cout << "8. Salir\n";
+    cout << "8. Mostrar tablas de enrutamiento\n"; // 🆕 nueva opción
+    cout << "9. Salir\n";
     cout << "=========================================\n";
     cout << "Seleccione una opción: ";
 }
@@ -116,6 +117,10 @@ int main() {
             break;
 
         case 8:
+            red.mostrarTablasDeEnrutamiento(); // 🆕 Mostrar las tablas completas
+            break;
+
+        case 9:
             cout << "\nSaliendo del programa...\n";
             break;
 
@@ -124,7 +129,7 @@ int main() {
             break;
         }
 
-    } while (opcion != 8);
+    } while (opcion != 9);
 
     cout << "✅ Programa finalizado correctamente.\n";
     return 0;
