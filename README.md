@@ -20,7 +20,7 @@ El usuario puede realizar diferentes operaciones sobre la red, tales como:
 ---
 
 ## Estructura del repositorio
-
+```
 Practica-4/
 │
 ├── Datos/
@@ -34,7 +34,7 @@ Practica-4/
 │ └── (otros archivos necesarios)
 │
 ├── README.md Documentación del proyecto
-
+```
 
 ---
 
@@ -71,8 +71,9 @@ Practica-4/
 
 Para clonar este proyecto, use el siguiente comando en su terminal:
 ---
+```bash
 git clone https://github.com/B-Alejandro/Practica-4.git
-
+```
 ---
 
 ## Autor
