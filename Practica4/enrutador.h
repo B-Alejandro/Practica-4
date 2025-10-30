@@ -1,32 +1,28 @@
 #ifndef ENRUTADOR_H
 #define ENRUTADOR_H
 
-#include <vector>
-#include <utility>  // pair
-#include <iostream>
+#include <map>
 #include <string>
+using namespace std;
 
 class Router {
 public:
-    int id;                             // Identificador del enrutador
-    int distancia;                      // Distancia usada en Dijkstra
-    bool visitado;                      // Bandera de visita
-    Router* previo;                     // Predecesor en el camino más corto
-    std::vector<std::pair<Router*, int>> vecinos; // Lista de vecinos (Router*, costo)
+    int id;
+    map<Router*, int> vecinos;
 
-    // ==========================
-    // Constructores y básicos
-    // ==========================
     Router(int id);
     void nuevoVecino(Router* vecino, int costo);
     void eliminarVecino(Router* vecino);
-    void reiniciar();
 
-    // ==========================
-    // Utilitarios
-    // ==========================
-    bool existeVecino(Router* vecino) const;
-    void mostrarVecinos() const;
+    // Métodos nuevos:
+    string getNombre() const;                       // Devuelve "R" + id
+    map<string, int> getTabla() const;              // Convierte vecinos a <string,int>
+    void mostrarConexiones() const;
+
+    // Métodos adicionales necesarios:
+    void agregarConexion(const string& nombreVecino, int costo);
+    void eliminarConexion(const string& nombreVecino);
+    void mostrarTablaEnrutamiento(const map<string, pair<int, string>>& tabla) const;
 };
 
 #endif

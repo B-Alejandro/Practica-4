@@ -1,62 +1,77 @@
 #include "enrutador.h"
-#include <climits>
-#include <algorithm> // remove_if
-#include <iomanip>   // setw
+#include <iostream>
+#include <iomanip>
+using namespace std;
 
-// =======================================================
-//              Implementación de la clase Router
-// =======================================================
+// ============================
+// Constructor
+// ============================
+Router::Router(int id) : id(id) {}
 
-Router::Router(int id)
-    : id(id), distancia(INT_MAX), visitado(false), previo(nullptr) {}
-
-// -------------------------------------------------------
-// Agregar un vecino (si no existe ya)
-// -------------------------------------------------------
+// ============================
+// Métodos básicos
+// ============================
 void Router::nuevoVecino(Router* vecino, int costo) {
-    if (!existeVecino(vecino))
-        vecinos.emplace_back(vecino, costo);
+    if (!vecino || vecino == this) return; // evita punteros nulos o bucles
+    vecinos[vecino] = costo;
 }
 
-// -------------------------------------------------------
-// Eliminar un vecino específico
-// -------------------------------------------------------
 void Router::eliminarVecino(Router* vecino) {
-    vecinos.erase(
-        std::remove_if(vecinos.begin(), vecinos.end(),
-                       [vecino](auto& p) { return p.first == vecino; }),
-        vecinos.end());
+    if (!vecino) return;
+    vecinos.erase(vecino);
 }
 
-// -------------------------------------------------------
-// Verificar si un vecino ya está en la lista
-// -------------------------------------------------------
-bool Router::existeVecino(Router* vecino) const {
-    for (auto& v : vecinos)
-        if (v.first == vecino)
-            return true;
-    return false;
+// ============================
+// Métodos nuevos
+// ============================
+string Router::getNombre() const {
+    return "R" + to_string(id);
 }
 
-// -------------------------------------------------------
-// Reiniciar campos de Dijkstra
-// -------------------------------------------------------
-void Router::reiniciar() {
-    distancia = INT_MAX;
-    visitado = false;
-    previo = nullptr;
-}
-
-// -------------------------------------------------------
-// Mostrar los vecinos del enrutador (para depuración)
-// -------------------------------------------------------
-void Router::mostrarVecinos() const {
-    std::cout << "R" << id << " -> ";
-    if (vecinos.empty()) {
-        std::cout << "(sin vecinos)\n";
-        return;
-    }
+map<string, int> Router::getTabla() const {
+    map<string, int> tabla;
     for (auto& [v, c] : vecinos)
-        std::cout << "R" << v->id << "(" << c << ") ";
-    std::cout << "\n";
+        if (v) tabla[v->getNombre()] = c;
+    return tabla;
+}
+
+void Router::mostrarConexiones() const {
+    cout << getNombre() << " -> ";
+    if (vecinos.empty()) {
+        cout << "sin conexiones";
+    } else {
+        bool first = true;
+        for (auto& [v, c] : vecinos) {
+            if (!first) cout << ", ";
+            cout << v->getNombre() << "(" << c << ")";
+            first = false;
+        }
+    }
+    cout << endl;
+}
+
+// ============================
+// Métodos adicionales
+// ============================
+void Router::agregarConexion(const string& nombreVecino, int costo) {
+    // este método solo tiene sentido si ya existen objetos Router reales
+    // por eso normalmente no se usa fuera de Red
+    cout << "⚠️ [aviso] agregarConexion(" << nombreVecino << ") debe hacerse desde Red.\n";
+}
+
+void Router::eliminarConexion(const string& nombreVecino) {
+    for (auto it = vecinos.begin(); it != vecinos.end(); ) {
+        if (it->first && it->first->getNombre() == nombreVecino)
+            it = vecinos.erase(it);
+        else
+            ++it;
+    }
+}
+
+void Router::mostrarTablaEnrutamiento(const map<string, pair<int, string>>& tabla) const {
+    cout << "\nTabla de enrutamiento de " << getNombre() << ":\n";
+    cout << left << setw(10) << "Destino" << setw(10) << "Costo" << "Siguiente salto\n";
+    cout << string(40, '-') << "\n";
+    for (auto& [dest, info] : tabla)
+        cout << setw(10) << dest << setw(10) << info.first << info.second << "\n";
 }
