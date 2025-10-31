@@ -63,29 +63,68 @@ void Red::mostrarRed() const {
         return;
     }
 
-    cout << "\n========= MATRIZ DE COSTOS =========\n";
+    // Matriz de distancias mínimas
+    vector<vector<int>> distancias(n, vector<int>(n, INT_MAX));
+
+    // Aplicar Dijkstra para cada enrutador como origen
+    for (int i = 0; i < n; ++i) {
+        string origen = enrutadores[i]->getNombre();
+
+        map<string,int> dist;
+        priority_queue<pair<int,string>, vector<pair<int,string>>, greater<pair<int,string>>> pq;
+        for (auto* r : enrutadores) dist[r->getNombre()] = INT_MAX;
+
+        dist[origen] = 0;
+        pq.push({0, origen});
+
+        while (!pq.empty()) {
+            auto [d, actual] = pq.top(); pq.pop();
+            if (d > dist[actual]) continue;
+
+            Router* r_actual = nullptr;
+            for (auto* r : enrutadores)
+                if (r->getNombre() == actual) { r_actual = r; break; }
+            if (!r_actual) continue;
+
+            for (auto& p : r_actual->vecinos) {
+                Router* vecino = p.first;
+                int costo = p.second;
+                string nombreVec = vecino->getNombre();
+                if (dist[actual] + costo < dist[nombreVec]) {
+                    dist[nombreVec] = dist[actual] + costo;
+                    pq.push({dist[nombreVec], nombreVec});
+                }
+            }
+        }
+
+        // Guardar resultados en la matriz
+        for (int j = 0; j < n; ++j) {
+            string destino = enrutadores[j]->getNombre();
+            if (dist[destino] != INT_MAX)
+                distancias[i][j] = dist[destino];
+        }
+    }
+
+    // Mostrar la matriz
+    cout << "\n========= MATRIZ DE COSTOS (RUTAS MÁS CORTAS - DIJKSTRA) =========\n";
     cout << setw(5) << " ";
     for (int j = 0; j < n; ++j)
-        cout << setw(5) << "R" + to_string(j + 1);
+        cout << setw(6) << "R" + to_string(j + 1);
     cout << endl;
 
     for (int i = 0; i < n; ++i) {
         cout << setw(4) << "R" + to_string(i + 1);
         for (int j = 0; j < n; ++j) {
-            if (i == j) {
-                cout << setw(5) << "0";
-                continue;
-            }
-            int costo = -1;
-            for (auto& p : enrutadores[i]->vecinos) {
-                Router* vecino = p.first;
-                int c = p.second;
-                if (vecino->id == j + 1) { costo = c; break; }
-            }
-            if (costo == -1) cout << setw(5) << "-"; else cout << setw(5) << costo;
+            if (i == j)
+                cout << setw(6) << "0";
+            else if (distancias[i][j] == INT_MAX)
+                cout << setw(6) << "-";
+            else
+                cout << setw(6) << distancias[i][j];
         }
         cout << endl;
     }
+    cout << "===================================================================\n";
 }
 
 // ============================

@@ -56,7 +56,7 @@ void Router::mostrarConexiones() const {
 void Router::agregarConexion(const string& nombreVecino, int costo) {
     // este método solo tiene sentido si ya existen objetos Router reales
     // por eso normalmente no se usa fuera de Red
-    cout << "⚠️ [aviso] agregarConexion(" << nombreVecino << ") debe hacerse desde Red.\n";
+    cout << " [aviso] agregarConexion(" << nombreVecino << ") debe hacerse desde Red.\n";
 }
 
 void Router::eliminarConexion(const string& nombreVecino) {
